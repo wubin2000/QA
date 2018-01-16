@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="author" content="chuck-durst">
+
+<title>予定実績管理</title>
+
+<link rel="stylesheet" type="text/css" href="css/bootstrap.min.css">
+<link rel="stylesheet" type="text/css"
+	href="css/bootstrap-datetimepicker.css">
+<link rel="stylesheet" type="text/css"
+	href="../dist/css/pitscheduler.min.css">
+<link rel="stylesheet" type="text/css" href="css/demo.css">
+
+<style>
+.form-horizontal .control-label {
+	/* text-align:right; */
+	text-align: left; //
+	background-color: #ffa;
+}
+
+.input-control-80px {
+	padding: 0px;
+	margin: 0px;
+	text-align: center;
+	border-radius: 5px;
+	width: 80px;
+}
+
+a {
+	cursor: pointer;
+}
+
+.progress-day-link  {
+	cursor: pointer;
+}
+</style>
+</head>
+
+<body data-spy="scroll" data-target=".bs-sidebar" data-offset="50">
+	<nav class="navbar navbar-default navbar-fixed-top">
+		<div class="container">
+			<div class="navbar-header">
+				<button type="button" class="navbar-toggle collapsed"
+					data-toggle="collapse" data-target="#navbar" aria-expanded="false"
+					aria-controls="navbar">
+					<span class="sr-only">event-tbl-1</span> <span class="icon-bar"></span>
+					<span class="icon-bar"></span> <span class="icon-bar"></span>
+				</button>
+				<a class="navbar-brand" href="index.html">予定実績管理</a>
+			</div>
+
+		</div>
+	</nav>
+	<div class="main-container container-fluid row">
+		<div class="demo-container">
+			<form class="form-horizontal ml-30">
+
+				<div class="form-group">
+					<label for="name" class="control-label col-xs-1">担当：</label>
+					<div class="col-xs-2">
+						<select class="form-control" id="number" name="number">
+							<option value="1" selected="selected">エリア</option>
+							<option value="2">部署</option>
+							<option value="3">ユーザー</option>
+						</select>
+					</div>
+					<div class="col-xs-2">
+						<select class="form-control" id="number" name="number">
+
+							<option value="2">部署</option>
+							<option value="3">ユーザー</option>
+						</select>
+					</div>
+
+					<div class="col-xs-1">
+						<select class="form-control" id="number" name="number">
+							<option value="1" selected="selected">ユーザー</option>
+							<option value="2">部署</option>
+							<option value="3">ユーザー</option>
+						</select>
+					</div>
+
+					<label for="name" class="control-label col-xs-1">範囲：</label>
+					<div class="col-xs-2">
+						<select class="form-control" id="number" name="number">
+							<option value="1" selected="selected">プロジェクト</option>
+							<option value="2">部署</option>
+							<option value="3">ユーザー</option>
+						</select>
+					</div>
+					<div class="col-xs-2">
+						<select class="form-control" id="number" name="number">
+							<option value="1" selected="selected">基地局</option>
+							<option value="2">部署</option>
+							<option value="3">ユーザー</option>
+						</select>
+					</div>
+					<div class="col-xs-1">
+						<select class="form-control" id="number" name="number">
+							<option value="1" selected="selected">タグ</option>
+							<option value="2">部署</option>
+							<option value="3">ユーザー</option>
+						</select>
+					</div>
+
+					<!-- <input type="text" class="form-control" id="name" name="name" placeholder="your name"> -->
+
+				</div>
+
+				<div class="form-group">
+
+
+
+					<label for="number" class="control-label col-xs-1">オーダー状態：</label>
+					<div class="col-xs-2">
+						<select class="form-control" id="number" name="number">
+							<option value="1">全部</option>
+							<option value="2" selected="selected">遅延</option>
+							<option value="3">未完成</option>
+							<option value="3">完了</option>
+						</select>
+					</div>
+					<label for="number" class="control-label   col-xs-1">並び順：</label>
+					<div class="col-xs-1">
+						<select class="form-control" id="number" name="number">
+							<option value="1">昇順</option>
+						</select>
+					</div>
+
+					<div class="col-xs-2">
+						<select class="form-control" id="number" name="number">
+							<option value="1">基地局ごと</option>
+							<option value="1">プロジェクトごと</option>
+							<option value="1">タグごと</option>
+						</select>
+					</div>
+					<label for="number" class="control-label col-xs-1">表示形式：</label>
+					<div class="col-xs-3">
+						<input type="radio" name="viewpattern" value="calendar"
+							checked="checked">カレンダー <input type="radio"
+							name="viewpattern" value="event">イベント <input type="radio"
+							name="viewpattern" value="table">一覧表
+					</div>
+				</div>
+
+				<div class="form-group hide event-tbl-3">
+					<label for="name" class="control-label col-xs-1">ユニット名：</label>
+					<div class="col-xs-2">
+						<input type="text" class="form-control input-sm"
+							placeholder="ユニットマスタ名">
+					</div>
+					<div class="col-xs-2">
+						<button type="submit" class="btn btn-primary btn-block">選択</button>
+					</div>
+				</div>
+				<div class="form-group">
+					<div class="col-xs-offset-10 col-xs-2">
+						<button type="submit" id="show-btn"
+							class="btn btn-primary btn-block">表示</button>
+					</div>
+				</div>
+			</form>
+
+			<div id="event-tbl-1" class="event-tbl-1"></div>
+
+			<table id=""
+				class="event-tbl-2 hide table table-striped table-bordered">
+				<thead class="thead-light">
+					<tr>
+						<th class="text-center">オーダー</th>
+						<th class="text-center">プロジェクト</th>
+						<th class="text-center">基地局</th>
+						<th class="text-center">予/実</th>
+						<th class="text-center">項目1</th>
+						<th class="text-center">項目2</th>
+						<th class="text-center">項目3</th>
+						<th class="text-center">項目4</th>
+						<th class="text-center">項目5</th>
+						<th class="text-center">項目6</th>
+						<th class="text-center">項目7</th>
+						<th class="text-center">項目8</th>
+
+					</tr>
+				</thead>
+				<tbody>
+					<tr>
+						<th class="text-center" scope="row" rowspan="2"><font
+							color="red">R01</font> 進捗率:30%</th>
+						<td class="text-center" rowspan="2">プロジェクトA</td>
+						<td class="text-center" rowspan="2">基地局A</td>
+						<td class="text-center">予定</td>
+
+
+						<td class="text-center">4/12</td>
+						<td class="text-center">5/12</td>
+						<td class="text-center">5/19</td>
+						<td class="text-center">5/31</td>
+						<td class="text-center"><a class="scheduled-day-link">6/31</a></td>
+						<td class="text-center"><a class="scheduled-day-link">8/2</a></td>
+						<td class="text-center"><a class="scheduled-day-link">8/15</a></td>
+						<td class="text-center"><a class="scheduled-day-link">8/31</a></td>
+					</tr>
+					<tr>
+
+
+						<td class="text-center">実績</td>
+
+						<td class="text-center">4/12</td>
+						<td class="text-center">5/15</td>
+						<td class="text-center">5/17</td>
+						<td class="text-center">5/31</td>
+						<td class="text-center progress-day-link"></td>
+						<td class="text-center progress-day-link"></td>
+						<td class="text-center progress-day-link"></td>
+						<td class="text-center progress-day-link"></td>
+					</tr>
+					<tr>
+						<th class="text-center" scope="row" rowspan="2">R02 進捗率:60%</th>
+						<td class="text-center" rowspan="2">プロジェクトB</td>
+						<td class="text-center" rowspan="2">基地局B</td>
+						<td class="text-center">予定</td>
+						<td class="text-center">5/15</td>
+						<td class="text-center">5/16</td>
+						<td class="text-center">5/20</td>
+						<td class="text-center">6/1</td>
+						<td class="text-center"><a class="scheduled-day-link">6/20</a></td>
+						<td class="text-center"></td>
+						<td class="text-center"></td>
+						<td class="text-center"></td>
+					</tr>
+					<tr>
+
+
+						<td class="text-center">実績</td>
+						<td class="text-center">5/16</td>
+						<td class="text-center">5/17</td>
+						<td class="text-center progress-day-link"></td>
+						<td class="text-center progress-day-link"></td>
+						<td class="text-center progress-day-link"></td>
+						<td class="text-center progress-day-link"></td>
+						<td class="text-center progress-day-link"></td>
+						<td class="text-center progress-day-link"></td>
+					</tr>
+
+				</tbody>
+			</table>
+
+			<table style="width: 100%"
+				class="event-tbl-3 hide table  table-bordered">
+				<thead class="thead-light">
+					<tr>
+						<th class="text-center">オーダー</th>
+						<th class="text-center">プロジェクト</th>
+						<th class="text-center">基地局</th>
+						<th class="text-center">予/実</th>
+
+
+
+						<th class="text-center">プロセス1</th>
+						<th class="text-center">プロセス2</th>
+						<th class="text-center">プロセス3</th>
+						<th class="text-center">プロセス4</th>
+						<th class="text-center">プロセス5</th>
+						<th class="text-center">プロセス6</th>
+						<th class="text-center">プロセス7</th>
+						<th class="text-center">プロセス8</th>
+
+					</tr>
+				</thead>
+				<tbody>
+					<tr>
+						<th class="text-center" style="vertical-align: middle;"
+							scope="row" rowspan="3"><font color="red">R01</font> 進捗率:30%</th>
+						<td class="text-center" style="vertical-align: middle;"
+							rowspan="3">プロジェクトA</td>
+						<td class="text-center" style="vertical-align: middle;"
+							rowspan="3">基地局A</td>
+
+						<td class="text-center align-middle"
+							style="vertical-align: middle;" rowspan="2">予定</td>
+						<td class="text-center" colspan="8">ユニット開始予定日:2017/4/10
+							&nbsp;&nbsp; ユニット完了予定日:2017/8/31</td>
+					</tr>
+
+					<tr>
+						<td class="text-center">4/12</td>
+						<td class="text-center">5/12</td>
+						<td class="text-center">5/19</td>
+						<td class="text-center">5/31</td>
+						<td class="text-center"><input type="text"
+							class="input-control-80px" value="6/13" /></td>
+						<td class="text-center"><input type="text"
+							class="input-control-80px" value="8/2" /></td>
+						<td class="text-center"><input type="text"
+							class="input-control-80px" value="8/15" /></td>
+						<td class="text-center"><input type="text"
+							class="input-control-80px" value="8/31" /></td>
+					</tr>
+
+					<tr>
+
+
+						<td class="text-center">実績</td>
+
+						<td class="text-center">4/12</td>
+						<td class="text-center">5/15</td>
+						<td class="text-center">5/17</td>
+						<td class="text-center">5/31</td>
+						<td class="text-center"></td>
+						<td class="text-center"></td>
+						<td class="text-center"></td>
+						<td class="text-center"></td>
+					</tr>
+
+					<tr>
+						<th class="text-center" style="vertical-align: middle;"
+							scope="row" rowspan="3">R02 進捗率:60%</th>
+						<td class="text-center" style="vertical-align: middle;"
+							rowspan="3">プロジェクトB</td>
+						<td class="text-center" style="vertical-align: middle;"
+							rowspan="3">基地局B</td>
+						<td class="text-center" style="vertical-align: middle;"
+							rowspan="2">予定</td>
+						<td class="text-center" colspan="8">ユニット開始予定日:2017/5/10
+							&nbsp;&nbsp; ユニット完了予定日:2017/8/3</td>
+					</tr>
+
+					<tr>
+						<td class="text-center">5/15</td>
+						<td class="text-center">5/16</td>
+						<td class="text-center">5/20</td>
+						<td class="text-center">6/1</td>
+						<td class="text-center"><input type="text"
+							class="input-control-80px" value="6/7" /></td>
+						<td class="text-center"><input type="text"
+							class="input-control-80px" value="7/2" /></td>
+						<td class="text-center"><input type="text"
+							class="input-control-80px" value="7/13" /></td>
+						<td class="text-center"><input type="text"
+							class="input-control-80px" value="8/3" /></td>
+					</tr>
+
+					<tr>
+
+
+						<td class="text-center">実績</td>
+						<td class="text-center">5/16</td>
+						<td class="text-center">5/17</td>
+						<td class="text-center"></td>
+						<td class="text-center"></td>
+						<td class="text-center"></td>
+						<td class="text-center"></td>
+						<td class="text-center"></td>
+						<td class="text-center"></td>
+					</tr>
+
+				</tbody>
+			</table>
+			<form class="form-horizontal ml-30 hide event-tbl-3">
+				<div class="form-group">
+					<div class="col-xs-offset-10 col-xs-2">
+						<button type="submit" id="show-btn"
+							class="btn btn-primary btn-block">更新</button>
+					</div>
+				</div>
+			</form>
+
+
+		</div>
+	</div>
+	<script src="js/jquery-2.2.4.min.js"></script>
+	<script src="js/bootstrap.min.js"></script>
+	<script src="js/moment-with-locales.min.js"></script>
+	<script src="js/locales.js"></script>
+	<script src="js/bootstrap-datetimepicker.js"></script>
+	<script src="../dist/js/pitscheduler.js"></script>
+	<script>
+		$(function() {
+
+
+
+
+			$(".scheduled-day-link").bind(
+					"click",
+					function() {
+
+						window.open("001-G302_ユニット進捗予定更新.html", "",
+								"width:1400,height:800");
+
+					});
+
+			$(".progress-day-link").bind(
+					"click",
+					function() {
+
+						window.open("001-G303_ユニット進捗実績更新.html", "",
+								"width:1400,height:800");
+
+					});
+
+
+
+			$("#show-btn").click(function(event) {
+				event.preventDefault();
+
+				let viewPattern = $("input[name=viewpattern]:checked").val();
+
+				if (viewPattern === "calendar") {
+					CalInit();
+					$(".event-tbl-1").removeClass("hide");
+					$(".event-tbl-2,.event-tbl-3").addClass("hide");
+				} else if (viewPattern === "event") {
+					$(".event-tbl-2").removeClass("hide");
+					$(".event-tbl-1,.event-tbl-3").addClass("hide");
+				} else if (viewPattern === "table") {
+					$(".event-tbl-3").removeClass("hide");
+					$(".event-tbl-1,.event-tbl-2").addClass("hide");
+				}
+
+			})
+
+
+
+			function CalInit() {
+
+				$("#event-tbl-1").pitScheduler({
+					locale : 'ja',
+					defaultDisplay : 'months',
+					hideEmptyLines : true,
+					disableLabelsMovement : false,
+					defaultGroupName : 'Default group',
+					defaultDate : '2017-11-12 16:30',
+					disableNotifications : false,
+					notificationDuration : 4000,
+					hideSpinner : true,
+					onChange : '',
+					onTaskCreation : '',
+					onUserCreation : '',
+					onTaskRemoval : '',
+					onUserRemoval : '',
+					onUserEdition : '',
+					onTaskAssignation : '',
+					onUserTaskDeletion : '',
+					onTaskEdition : '',
+					disableUndo : false,
+					resizeTask : true,
+					tasks : [ {
+						id : 'task1',
+						name : 'コンセプト作成',
+						description : 'Allows users to access to the jacuzzi',
+						color : '#fcd720',
+						// tag: 'limited places',
+						tagColor : '#50d371'
+					}, {
+						id : 'task5',
+						name : 'コンセプト作成',
+						description : 'Allows users to access to the jacuzzi',
+						color : '#fcd720',
+						// tag: 'limited places',
+						tagColor : '#50d371'
+					},
+
+					{
+						id : 'task2',
+						name : '現地調査',
+						description : 'Allows usesr to access to the SPA',
+						color : '#E91E63',
+						tag : 'AND',
+						tagColor : '#FFFFFF'
+					}, {
+						id : 'task3',
+						name : '伝送種別確定',
+						description : 'Allows users to access to internet',
+						color : '#536DFE',
+						tag : 'AND',
+						tagColor : '#FFFFFF'
+					}, {
+						id : 'task4',
+						name : '各種確認',
+						color : '#50d371',
+						tag : 'OR',
+						tagColor : '#FFFFFF'
+					}, {
+						id : 'task5',
+						name : '物件確定',
+						color : '#261333',
+						tag : 'OR',
+						tagColor : '#FFFFFF'
+					}, {
+						id : 'task6',
+						name : 'シミュレーション',
+						color : '#40dae1'
+					}, {
+						id : 'task11',
+						name : 'コンセプト作成',
+						description : 'Allows users to access to the jacuzzi',
+						color : '#fcd720'
+
+					}, {
+						id : 'task51',
+						name : 'コンセプト作成',
+						description : 'Allows users to access to the jacuzzi',
+						color : '#fcd720'
+
+					},
+
+					{
+						id : 'task21',
+						name : '現地調査',
+						description : 'Allows usesr to access to the SPA',
+						color : '#E91E63'
+
+					}, {
+						id : 'task31',
+						name : '伝送種別確定',
+						description : 'Allows users to access to internet',
+						color : '#536DFE'
+
+					}, {
+						id : 'task41',
+						name : '各種確認',
+						color : '#50d371'
+
+					}, {
+						id : 'task51',
+						name : '物件確定',
+						color : '#261333'
+					}, {
+						id : 'task61',
+						name : 'シミュレーション',
+						color : '#40dae1'
+					} ],
+					users : [ {
+						name : '予定',
+						group : '<font color="red">R01</font> 進捗率:30%',
+						tasks : [ {
+							id : 'task1',
+							start_date : '2017-11-01 00:00',
+							end_date : '2017-11-04 00:00'
+						},
+
+						{
+							id : 'task2',
+							start_date : '2017-11-04 10:40',
+							end_date : '2017-11-08 16:00'
+
+						},
+
+						{
+							id : 'task3',
+							start_date : '2017-11-04 10:40',
+							end_date : '2017-11-06 16:00',
+							is_samegroup : true
+						},
+
+						{
+							id : 'task4',
+							start_date : '2017-11-09 00:40',
+							end_date : '2017-11-09 16:00'
+						}, {
+							id : 'task5',
+							start_date : '2017-11-09 00:40',
+							end_date : '2017-11-09 16:00',
+							is_samegroup : true
+						}, {
+							id : 'task6',
+							start_date : '2017-11-10 00:40',
+							end_date : '2017-11-13 16:00'
+						} ]
+					}, {
+						name : '実績',
+						group : '<font color="red">R01</font> 進捗率:30%',
+						tasks : [ {
+							id : 'task1',
+							start_date : '2017-11-01 00:00',
+							end_date : '2017-11-06 00:00'
+						},
+
+						{
+							id : 'task2',
+							start_date : '2017-11-06 10:40',
+							end_date : '2017-11-08 16:00'
+						},
+
+						{
+							id : 'task3',
+							start_date : '2017-11-06 10:40',
+							end_date : '2017-11-08 16:00'
+						},
+
+						{
+							id : 'task4',
+							start_date : '2017-11-09 00:40',
+							end_date : '2017-11-10 16:00'
+						}, {
+							id : 'task5',
+							start_date : '2017-11-09 00:40',
+							end_date : '2017-11-10 16:00'
+						}, {
+							id : 'task6',
+							start_date : '2017-11-11 00:40',
+							end_date : '2017-11-13 16:00'
+						} ]
+					}, {
+						name : '予定',
+						group : 'R02 進捗率:60%',
+						tasks : [ {
+							id : 'task11',
+							start_date : '2017-11-01 02:30',
+							end_date : '2017-11-03 00:00'
+						}, {
+							id : 'task21',
+							start_date : '2017-11-03 00:00',
+							end_date : '2017-11-05 00:00'
+						}, {
+							id : 'task31',
+							start_date : '2017-11-05 00:00',
+							end_date : '2017-11-08 00:00'
+						}, {
+							id : 'task41',
+							start_date : '2017-11-08 00:00',
+							end_date : '2017-11-09 00:00'
+						}, {
+							id : 'task51',
+							start_date : '2017-11-09 00:00',
+							end_date : '2017-11-15 00:00'
+						} ]
+					}, {
+						name : '実績',
+						group : 'R02 進捗率:60%',
+						tasks : [ {
+							id : 'task11',
+							start_date : '2017-11-01 02:30',
+							end_date : '2017-11-03 00:00'
+						}, {
+							id : 'task21',
+							start_date : '2017-11-03 00:00',
+							end_date : '2017-11-05 00:00'
+						}, {
+							id : 'task31',
+							start_date : '2017-11-05 00:00',
+							end_date : '2017-11-08 00:00'
+						}, {
+							id : 'task41',
+							start_date : '2017-11-08 00:00',
+							end_date : '2017-11-09 00:00'
+						}, {
+							id : 'task51',
+							start_date : '2017-11-09 00:00',
+							end_date : '2017-11-15 00:00'
+						} ]
+					} ]
+				});
+
+			}
+
+		});
+	</script>
+</body>
+</html
