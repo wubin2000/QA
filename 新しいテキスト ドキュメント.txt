@@ -1,0 +1,74 @@
+/**
+     * 転用関連項目設定処理
+     * @param sbdCordinator 料金・割引連携クラス
+     */
+    private static void setDivertItem(SbdCordinator sbdCordinator) {
+        // 料金割引適用情報を取得
+        NgnOrderInf ngnOrderInf = sbdCordinator.getNgnOrderInf();
+        // 料金割引適用付加情報を取得
+        NgnAddInf ngnAddInf = sbdCordinator.getNgnAddInf();
+
+        // イベントIDを取得
+        String eventId = sbdCordinator.getNgndoc().getEventId();
+        // IP-OpS注文種別を取得
+/**
+     * 転用関連項目設定処理
+     * @param sbdCordinator 料金・割引連携クラス
+     */
+    private static void setDivertItem(SbdCordinator sbdCordinator) {
+        // 料金割引適用情報を取得
+        NgnOrderInf ngnOrderInf = sbdCordinator.getNgnOrderInf();
+        // 料金割引適用付加情報を取得
+        NgnAddInf ngnAddInf = sbdCordinator.getNgnAddInf();
+
+        // イベントIDを取得
+        String eventId = sbdCordinator.getNgndoc().getEventId();
+        // IP-OpS注文種別を取得
+        String adOrderClass = ngnOrderInf.getAdOrderClass();
+        // ラベル30を取得
+        String label30 = ngnAddInf.getLabel30Add();
+        //TODO
+        //  ラベル29を取得
+        String label29 = ngnAddInf.getLabel29Add();
+        //事業者変更コードチェック条件
+        if (( SbdConst.EVENTID22941 == eventId  || SbdConst.EVENTID22942 == eventId)
+				&& (SbdConst.ORDERCLASS_DIVERT == adOrderClass
+						|| SbdConst.ORDERCLASS_CORRECT_DIVERT == adOrderClass || SbdConst.ORDERCLASS_CANCEL_DIVERT == adOrderClass)) {
+			// 事業者変更コードチェック内容
+			if (!StringUtils.isEmpty(label29)
+					&& label29 != SbdConst.ZIGYOSYAHENKO
+					&& label29 != SbdConst.ZIGYOSYAHENKO_CHANGE) {
+				// 条件に合致しない場合は異常終了する
+				throw new SbdApplicationException(
+						SbdInnerErrIF.SBD_ERR_040_ZIGYOSYAHENKO_LABEL29 );
+			}
+		}
+        // TODO
+        // 転用関連日付設定処理
+        // イベントIDが申込完了の場合
+        if (SbdConst.EVENTID22942.equals(eventId)) {
+            // IP-OpS注文種別が新規、修正（新規）、取消（新規）の場合
+            if (SbdConst.ORDERCLASSA0010.equals(adOrderClass)
+                || SbdConst.ORDERCLASSA0610.equals(adOrderClass)
+                || SbdConst.ORDERCLASS_NEW_CANCEL.equals(adOrderClass)) {
+                // ラベル30がNULL以外の場合
+                if (!StringUtils.isEmpty(label30)) {
+                    // 転用受付年月日に新規受付年月日を設定
+                    ngnOrderInf.setAdDivertReceptDate(
+                        ngnAddInf.getAdCustReceptDateAdd());
+                    // 転用申込年月日に契約申込年月日を設定
+                    ngnOrderInf.setAdDivertApplyDate(
+                        ngnAddInf.getAdCustApplyDateAdd());
+                }
+            }
+        } else if (SbdConst.EVENTID22941.equals(eventId)) {
+            // IP-OpS注文種別が新規、修正（新規）の場合
+            if (SbdConst.ORDERCLASSA0010.equals(adOrderClass)
+                || SbdConst.ORDERCLASSA0610.equals(adOrderClass)) {
+                // ラベル30がNULL以外の場合
+                if (!StringUtils.isEmpty(label30)) {
+                    // 転用年月日に料金変更年月日を設定
+                    ngnOrderInf.setAdDivertDate(ngnAddInf.getAdBChangeDate());
+                }
+            }
+        }
