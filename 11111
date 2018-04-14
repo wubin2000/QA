@@ -1,0 +1,74 @@
+
+EventId eventId = Ngndoc.getEventId();
+AdOrderClass adOrderClass = NgnOrderInf.getAdOrderClass();
+Label30Add label30Add = ngnAddInf.getLabel30Add();
+--------
+// Label29Add label29Add = ngnAddInf.getLabel29Add();
+	if((22941 == eventId || 22942 == eventId) && (A0070 == adOrderClass
+											|| A0370 == adOrderClass
+											|| A0670 == adOrderClass)){
+
+		if(StringUtils.isEmpty(label29Add) && 事業者変更 == label29Add 
+		if(!StringUtils.isEmpty(label29Add) && 事業者変更 !== label29Add 
+				&& 事業者変更後キャンセル !== label29Add){
+					
+					xxx異常;
+		}									
+	}
+------
+
+   if(22942 == eventId // 22942(eventId)){
+
+   		if(A0010 == adOrderClass || A0610 == adOrderClass || A0310 ==   
+                     adOrderClass){
+                 if(!StringUtils.isEmpty(label30Add){
+                 	転用受付年月日 = xxx.get新規受付年月日;
+                 	
+                 	転用申込年月日 = xxx.get契約申込年月日;
+
+                 }
+
+   		}
+   }
+
+    if(22941 == eventId // 22941(eventId)){
+
+    	if(A0010 == adOrderClass || A0610 == adOrderClass){
+                 if(!StringUtils.isEmpty(label30Add){
+                 	転用年月日 = xxx.get料金変更年月日;
+                 	
+           
+
+                 }
+
+-----   }else if (A0070 == adOrderClass || A0670 == adOrderClass ){
+			
+			if(StringUtils.isEmpty(label29Add){
+
+				転用受付年月日 = xxx.get契約受付年月日;
+				転用申込年月日 = xxx.get契約申込年月日;
+				転用年月日 = xxx.get料金変更年月日;
+				事業者変更受付年月日 = xxx.get事業者変更受付年月日;
+				事業者変更申込年月日 = xxx.get事業者変更申込年月日;
+				事業者変更年月日 = xxx.get事業者変更年月日;
+
+			}
+
+			if(事業者変更 == label29Add || 事業者変更後キャンセル !== label29Add){
+
+				転用受付年月日 = xxx.get転用受付年月日 ??; return 転用受付年月日
+				転用申込年月日 = xxx.get転用申込年月日;
+				転用年月日 = xxx.get転用年月日;
+				事業者変更受付年月日 = xxx.get契約受付年月日;
+				事業者変更申込年月日 = xxx.get契約申込年月日;
+				事業者変更年月日 = xxx.get料金変更年月日;
+
+------
+			}
+   		}
+
+    }
+    	
+
+    	
+    
