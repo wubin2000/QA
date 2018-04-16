@@ -1,0 +1,537 @@
+/*
+ * Copyright (c) 2016 NTT DATA CORPORATION. All rights reserved.
+ */
+package telecom.cms.sbd.logic.check;
+
+import org.apache.commons.lang.StringUtils;
+import java.util.ArrayList;
+import java.util.List;
+
+import telecom.cms.sbd.SbdConst;
+import telecom.cms.sbd.SbdInnerErrIF;
+import telecom.cms.sbd.SbdMsgIF;
+import telecom.cms.sbd.controller.SbdCordinator;
+import telecom.cms.sbd.entity.NgnAdCdMst;
+import telecom.cms.sbd.entity.NgnZyutakuKeiyaku;
+import telecom.cms.sbd.exception.SbdApplicationException;
+import telecom.cms.sbd.exception.SbdSystemException;
+import telecom.cms.sbd.util.SbdUtil;
+import telecom.cms.sbd.util.db.NgnAdCdMstDBAccesser;
+import telecom.cms.sbd.util.db.NgnZyutakuKeiyakuDBAccesser;
+import telecom.common.logging.LoggerIf;
+
+/**
+ * N付加受託対象契約管理情報反映
+ * N付加受託対象契約管理TBLへ登録・更新処理を行う。
+ * @author $Author: yamanouetsg $
+ * @version $Revision: 1.1 $
+ */
+public final class MstrReceptValidatePatturn039 implements SbdCheckIF {
+
+    /**
+     * ログに使用するクラス名
+     */
+    private static final String LOG_HEADER =
+        SbdUtil.getLoHeader(new Throwable());
+
+    /**
+     * N付加受託対象契約管理情報反映メソッド
+     * @param sbdCordinator 料金割引アダプタ連携オブジェクト
+     * @exception SbdApplicationException 料金・割引アダプタ内部アプリケーション例外
+     * @exception SbdSystemException 料金・割引アダプタ内部システム例外
+     */
+    public void check(SbdCordinator sbdCordinator)
+        throws SbdApplicationException, SbdSystemException {
+
+        // メソッド名取得
+        final String method = SbdUtil.getMethodName(new Throwable());
+
+        try {
+            if (SbdUtil.LOG.isDebugLoggable()) {
+                // メソッド開始ログ出力
+                SbdUtil.putStartLog(LoggerIf.DEBUG,
+                    new String[]{LOG_HEADER, method});
+            }
+
+            // パラメータチェック処理
+            pramCheck(sbdCordinator);
+
+            // NGN-OpSコード定義マスタBeanを生成
+            NgnAdCdMst ngnAdCdMst = new NgnAdCdMst();
+
+            // NGNOPSコードIDへ「27：受託対象NGN付加サービスメニュー」を設定
+            ngnAdCdMst.setNgnopsCdid(SbdConst.AD_SERVICE_MENU_ZYUDAKU);
+
+            // NGNOPSコード値１へ「付加サービスメニュー」を設定
+            ngnAdCdMst.setNgnopsCd1(sbdCordinator
+                    .getNgnOrderInf().getAdServiceMenu());
+
+            // NGNOPSコード値２へNULLを設定
+            ngnAdCdMst.setNgnopsCd2(null);
+
+            // NGNOPSコード値３へNULLを設定
+            ngnAdCdMst.setNgnopsCd3(null);
+
+            // NGNOPSコード値４へNULLを設定
+            ngnAdCdMst.setNgnopsCd4(null);
+
+            // NGNOPSコード値５へNULLを設定
+            ngnAdCdMst.setNgnopsCd5(null);
+
+            // IPOPSコード値へNULLを設定
+            ngnAdCdMst.setIpopsCd(null);
+
+            // NGN-OPSコード定義マスタ情報取得処理
+            List ngnAdCdMstList = NgnAdCdMstDBAccesser.get(ngnAdCdMst);
+
+            // NGN-OPSコード定義マスタ情報リストのサイズを取得
+            int count = ngnAdCdMstList.size();
+
+            // DEBUGログ
+            if (SbdUtil.LOG.isDebugLoggable()) {
+                // 取得件数を出力
+                SbdUtil.putLog(LoggerIf.DEBUG,
+                        new String[]{LOG_HEADER, method,
+                                     SbdMsgIF.SBD_NML_RESULT_CNT,
+                                     String.valueOf(count)});
+            }
+
+            // 取得件数0件の場合
+            if (count == 0) {
+
+                // DEBUGログ
+                if (SbdUtil.LOG.isDebugLoggable()) {
+                    // メソッド終了ログ出力
+                    SbdUtil.putEndLog(LoggerIf.DEBUG,
+                        new String[]{LOG_HEADER, method});
+                }
+                // 処理を終了する
+                return;
+            // 取得件数2件以上の場合
+            } else if (count >= 2) {
+                // 2件以上の場合は異常終了
+                throw new SbdApplicationException(
+                    SbdInnerErrIF.SBD_ERR_039_CDMST_DUPLICATE);
+            }
+            // 取得件数1件の場合
+            // N付加受託対象契約管理情報Bean生成
+            NgnZyutakuKeiyaku ngnZyutakuKeiyaku = new NgnZyutakuKeiyaku();
+
+            // 注文パターンを「0」で初期化
+            int disposalPattern = 0;
+
+            //  注文種別を設定
+            String adOrderClass =
+                sbdCordinator.getNgnOrderInf().getAdOrderClass();
+
+            // 注文種別が
+            // 「A0010（新規）」
+            // 「A0037（移転新規（回線ID変更あり））」
+            // 「A0039（移転新規（回線ID変更なし））」
+            // 「A0070（転用）」
+            // 「A0610（修正（新規））」
+            // 「A0637（修正（移転新規（回線ID変更あり）））」
+            // 「A0639（修正（移転新規（回線ID変更なし）））」
+            // 「A0670（修正（転用））」
+            // かつ、商品拡張項目がNULL以外
+            // かつ、商品拡張項目（転用元）がNULL
+            // かつ、料金請求方法が「99：その他」以外
+            if ((SbdConst.ORDERCLASSA0010.equals(adOrderClass)
+                    || SbdConst.ORDERCLASSA0037.equals(adOrderClass)
+                    || SbdConst.ORDERCLASSA0039.equals(adOrderClass)
+                    || SbdConst.ORDERCLASS_DIVERT.equals(adOrderClass)
+                    || SbdConst.ORDERCLASSA0610.equals(adOrderClass)
+                    || SbdConst.ORDERCLASSA0337.equals(adOrderClass)
+                    || SbdConst.ORDERCLASSA0339.equals(adOrderClass)
+                    || SbdConst.ORDERCLASS_CORRECT_DIVERT.equals(adOrderClass))
+                    && !StringUtils.isEmpty(sbdCordinator.
+                            getNgnOrderInf().getAdOrosiZigyosyaId())
+                    && StringUtils.isEmpty(sbdCordinator.
+                            getNgnOrderInf().getAdDivertFrOrosiZigyosyaId())
+                    && !SbdConst.AD_BILLING_SONOTA.equals(
+                            sbdCordinator.getNgnOrderInf().getAdBilling())) {
+
+                // 処理パターンへ登録系処理を設定
+                disposalPattern = 1;
+                // 契約開始年月日へ「料金変更年月日」を設定
+                ngnZyutakuKeiyaku.setAdContractODate(
+                        sbdCordinator.getNgnAddInf().getAdBChangeDate());
+
+            // 注文種別が
+            // 「A0020（廃止）」
+            // 「A0038（移転廃止（回線ID変更あり））」
+            // 「A003A（移転廃止（回線ID変更なし））」
+            // 「A0620（修正（廃止））」
+            // 「A0638（修正（移転廃止（回線ID変更あり）））」
+            // 「A063A（修正（移転廃止（回線ID変更なし）））」
+            // かつ、商品拡張項目がNULL以外
+            // かつ、商品拡張項目（転用元）がNULL
+            // かつ、料金請求方法が「99：その他」以外
+            } else if ((SbdConst.ORDERCLASSA0020.equals(adOrderClass)
+                    || SbdConst.ORDERCLASSA0038.equals(adOrderClass)
+                    || SbdConst.ORDERCLASSA003A.equals(adOrderClass)
+                    || SbdConst.ORDERCLASSA0620.equals(adOrderClass)
+                    || SbdConst.ORDERCLASSA0338.equals(adOrderClass)
+                    || SbdConst.ORDERCLASSA033A.equals(adOrderClass))
+                    && !StringUtils.isEmpty(sbdCordinator.
+                        getNgnOrderInf().getAdOrosiZigyosyaId())
+                    && StringUtils.isEmpty(sbdCordinator.
+                        getNgnOrderInf().getAdDivertFrOrosiZigyosyaId())
+                    && !SbdConst.AD_BILLING_SONOTA.equals(sbdCordinator.
+                        getNgnOrderInf().getAdBilling())) {
+
+                // 処理パターンへ更新系処理を設定
+                disposalPattern = 2;
+                // 契約終了年月日へ「課金停止日」を設定
+                ngnZyutakuKeiyaku.setAdContractEDate(
+                        sbdCordinator.getNgnOrderInf().getAdServiceEDate());
+
+            // 注文種別が
+            // 「A0070（転用）」
+            // 「A0670（修正（転用））」
+            // かつ、商品拡張項目がNULL
+            // かつ、商品拡張項目（転用元）がNULL以外
+            // かつ、料金請求方法が「99：その他」以外
+            } else if ((SbdConst.ORDERCLASS_DIVERT.equals(adOrderClass)
+                    || SbdConst.ORDERCLASS_CORRECT_DIVERT.
+                        equals(adOrderClass))
+                    && StringUtils.isEmpty(sbdCordinator.
+                        getNgnOrderInf().getAdOrosiZigyosyaId())
+                    && !StringUtils.isEmpty(sbdCordinator.
+                        getNgnOrderInf().getAdDivertFrOrosiZigyosyaId())
+                    && !SbdConst.AD_BILLING_SONOTA.equals(sbdCordinator.
+                        getNgnOrderInf().getAdBilling())) {
+
+                // 更新系処理を設定
+                disposalPattern = 2;
+                // 契約終了年月日へ「料金変更年月日」を設定
+                ngnZyutakuKeiyaku.setAdContractEDate(
+                        sbdCordinator.getNgnAddInf().getAdBChangeDate());
+            } else {
+
+                if (SbdUtil.LOG.isDebugLoggable()) {
+                    // メソッド終了ログ出力
+                    SbdUtil.putEndLog(LoggerIf.DEBUG,
+                        new String[]{LOG_HEADER, method});
+                }
+                // 処理を終了する
+                return;
+            }
+
+            // 処理パターンが「1：登録系」の場合
+            if (disposalPattern == 1) {
+
+                // N付加受託対象契約管理情報編集
+                // サービスTBLIDへ「回線TBLID」を設定
+                ngnZyutakuKeiyaku.setAdLineInfId(sbdCordinator
+                        .getNgnOrderInf().getAdLineInfId());
+
+                // 料金割引適用情報TBLIDへ「TBLID」を設定
+                ngnZyutakuKeiyaku.setAdOrderInfId(sbdCordinator
+                        .getNgnOrderInf().getAdOrderInfId());
+
+                // NGN-IDへ「NGN-ID」を設定
+                ngnZyutakuKeiyaku.setAdLineNgnId(sbdCordinator
+                        .getNgnOrderInf().getAdLineNgnId());
+
+                // 料金識別IDへ「料金識別ID」を設定
+                ngnZyutakuKeiyaku.setAdBillPrimary(sbdCordinator
+                        .getNgnOrderInf().getAdBillPrimary());
+
+                // 商品拡張項目へ「商品拡張項目」を設定
+                ngnZyutakuKeiyaku.setAdOrosiZigyosyaId(sbdCordinator
+                        .getNgnOrderInf().getAdOrosiZigyosyaId());
+
+                // 契約終了年月日へNULLを設定
+                ngnZyutakuKeiyaku.setAdContractEDate(null);
+
+                // NGN付加サービスメニューへ「付加サービスメニュー」を設定
+                ngnZyutakuKeiyaku.setAdServiceMenu(sbdCordinator
+                        .getNgnOrderInf().getAdServiceMenu());
+
+                // NGN付加サービス種別へ「付加サービス種別」を設定
+                ngnZyutakuKeiyaku.setAdServiceClass(sbdCordinator
+                        .getNgnOrderInf().getAdServiceClass());
+
+                // 付加サービスステータスへ「付加サービスステータス」を設定
+                ngnZyutakuKeiyaku.setAdOrderS(sbdCordinator
+                        .getNgnOrderInf().getAdOrderS());
+
+                // N付加受託対象契約管理情報作成件数初期化
+                int zyutakuCount = 0;
+                try {
+                    // N付加受託対象契約管理情報作成処理
+                    zyutakuCount =
+                        NgnZyutakuKeiyakuDBAccesser.create(ngnZyutakuKeiyaku);
+
+                } catch (SbdApplicationException e) {
+                    // エラー内容をログ出力
+                    SbdUtil.putLog(LoggerIf.ERROR, new String[]{
+                            LOG_HEADER, method, SbdMsgIF.SBD_NML_LOG_PARAMS},
+                            new Object[]{e.getErrCd()});
+                    // SbdApplicationExceptionがスローされた場合は上位階層へスローする
+                    throw new SbdApplicationException(
+                        SbdInnerErrIF.SBD_ERR_039_NGNZUDAKU_CREATE_APPEX);
+
+                } catch (SbdSystemException e) {
+                    throw e;
+                } catch (Exception e) {
+                    throw new SbdSystemException(
+                        SbdMsgIF.SBD_ERR_SYSTEM_MSG_039, e);
+                }
+
+                // 登録件数が1件の場合
+                if (zyutakuCount == 1) {
+
+                    if (SbdUtil.LOG.isDebugLoggable()) {
+                        // メソッド終了ログ出力
+                        SbdUtil.putEndLog(LoggerIf.DEBUG,
+                            new String[]{LOG_HEADER, method});
+                    }
+                    // 処理を終了する
+                    return;
+
+                // 登録件数が1件以外の場合
+                } else {
+                    // 異常終了
+                    throw new SbdApplicationException(
+                        SbdInnerErrIF.SBD_ERR_039_NGNZUDAKU_CREATE_NO_ONE);
+                }
+            // 処理パターンが「2：更新系」の場合
+            } else if (disposalPattern == 2) {
+
+                // N付加受託対象契約管理情報編集
+                // N付加受託対象契約管理情報リスト初期化
+                List zyutakuList = new ArrayList();
+                try {
+                    // N付加受託対象契約管理情報取得
+                    zyutakuList = NgnZyutakuKeiyakuDBAccesser.getList(
+                        sbdCordinator.getNgnOrderInf().getAdLineInfId(),
+                        sbdCordinator.getNgnOrderInf().getAdBillPrimary());
+
+                } catch (SbdApplicationException e) {
+                    // エラー内容をログ出力
+                    SbdUtil.putLog(LoggerIf.ERROR, new String[]{
+                            LOG_HEADER, method, SbdMsgIF.SBD_NML_LOG_PARAMS},
+                            new Object[]{e.getErrCd()});
+                    // SbdApplicationExceptionがスローされた場合は上位階層へスローする
+                    throw new SbdApplicationException(
+                        SbdInnerErrIF.SBD_ERR_039_NGNZUDAKU_SELECT_APPEX);
+                } catch (SbdSystemException e) {
+                    throw e;
+                } catch (Exception e) {
+                    throw new SbdSystemException(
+                        SbdMsgIF.SBD_ERR_SYSTEM_MSG_039, e);
+                }
+
+                int listCount = zyutakuList.size();
+                // N付加受託対象契約管理情報リストが0件の場合
+                if (listCount == 0) {
+                    // 異常終了
+                    throw new SbdApplicationException(
+                        SbdInnerErrIF.SBD_ERR_039_NGNZUDAKU_SELECT_ZERO);
+
+                // N付加受託対象契約管理情報リストが1件の場合
+                } else if (listCount == 1) {
+
+                    // N付加受託対象契約管理情報リストからBeanを取得
+                    NgnZyutakuKeiyaku selectZyutakuKeiyaku =
+                        (NgnZyutakuKeiyaku) zyutakuList.get(0);
+
+                    int updateCount = 0;
+                    try {
+                        // N付加受託対象契約管理情報更新
+                        updateCount = NgnZyutakuKeiyakuDBAccesser.update(
+                            selectZyutakuKeiyaku.getNgnZyutakuKeiyakuTblid(),
+                            sbdCordinator.getNgnOrderInf().getAdOrderInfId(),
+                            ngnZyutakuKeiyaku.getAdContractEDate(),
+                            sbdCordinator.getNgnOrderInf().getAdOrderS(),
+                            selectZyutakuKeiyaku.getTimestamp());
+
+                    } catch (SbdApplicationException e) {
+                        // エラー内容をログ出力
+                        SbdUtil.putLog(LoggerIf.ERROR, new String[]{
+                            LOG_HEADER, method, SbdMsgIF.SBD_NML_LOG_PARAMS},
+                            new Object[]{e.getErrCd()});
+                        // SbdApplicationExceptionがスローされた場合は
+                        // メッセージの編集を行い上位階層へスローする
+                        throw new SbdApplicationException(
+                            SbdInnerErrIF.SBD_ERR_039_NGNZUDAKU_UPDATE_APPEX);
+
+                    } catch (SbdSystemException e) {
+                        throw e;
+                    } catch (Exception e) {
+                        throw new SbdSystemException(
+                            SbdMsgIF.SBD_ERR_SYSTEM_MSG_039, e);
+                    }
+                    // 更新件数が0件の場合
+                    if (updateCount == 0) {
+                        // 異常終了
+                        throw new SbdApplicationException(
+                            SbdInnerErrIF.SBD_ERR_039_NGNZUDAKU_UPDATE_ZERO);
+
+                    // 更新件数が1件の場合
+                    } else if (updateCount == 1) {
+
+                        if (SbdUtil.LOG.isDebugLoggable()) {
+                            // メソッド終了ログ出力
+                            SbdUtil.putEndLog(LoggerIf.DEBUG,
+                                new String[]{LOG_HEADER, method});
+                        }
+                        // 処理を終了する
+                        return;
+
+                    // 更新件数が2件以上の場合
+                    } else if (updateCount >= 2) {
+                        // 異常終了
+                        throw new SbdApplicationException(SbdInnerErrIF.
+                            SBD_ERR_039_NGNZUDAKU_UPDATE_DUPLICATE);
+                    }
+
+                // N付加受託対象契約管理情報リストが2件以上の場合
+                } else if (listCount >= 2) {
+                    // 異常終了
+                    throw new SbdApplicationException(
+                        SbdInnerErrIF.SBD_ERR_039_NGNZUDAKU_SELECT_DUPLICATE);
+                }
+            }
+        } catch (SbdApplicationException e) {
+            throw e;
+        } catch (SbdSystemException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new SbdSystemException(SbdMsgIF.SBD_ERR_SYSTEM_MSG_039, e);
+        }
+    }
+
+    /**
+     * 必須チェックメソッド
+     * 該当の項目がNULLまたは空文字かをチェックする
+     *
+     * @param pramSbdCor 料金割引アダプタ連携オブジェクト
+     * @exception SbdApplicationException 料金・割引アダプタ内部アプリケーション例外
+     */
+    private void pramCheck(final SbdCordinator pramSbdCor)
+        throws SbdApplicationException {
+
+        // メソッド名取得
+        final String method = SbdUtil.getMethodName(new Throwable());
+
+        try {
+            if (SbdUtil.LOG.isDebugLoggable()) {
+                // メソッド開始ログ出力
+                SbdUtil.putStartLog(LoggerIf.DEBUG,
+                    new String[]{LOG_HEADER, method});
+            }
+
+            // TBLIDの必須チェック
+            if (pramSbdCor.getNgnOrderInf().getAdOrderInfId() == null) {
+                // NULLの場合は異常終了
+                throw new SbdApplicationException(
+                    SbdInnerErrIF.SBD_ERR_039_ADORDERINFID_ISNULL);
+
+            // 回線TBLIDの必須チェック
+            } else if (pramSbdCor.getNgnOrderInf()
+                    .getAdLineInfId() == null) {
+                // NULLの場合は異常終了
+                throw new SbdApplicationException(
+                    SbdInnerErrIF.SBD_ERR_039_ADLINEINFID_ISNULL);
+
+            // 料金変更年月日の必須チェック
+            } else if (pramSbdCor.getNgnAddInf()
+                    .getAdBChangeDate() == null) {
+                // NULLの場合は異常終了
+                throw new SbdApplicationException(
+                    SbdInnerErrIF.SBD_ERR_039_ADBCHANGEDATE_ISNULL);
+
+            // NGN-IDの必須チェック
+            } else if (StringUtils.isEmpty(pramSbdCor
+                    .getNgnOrderInf().getAdLineNgnId())) {
+                // NULLまたは空文字の場合は異常終了
+                throw new SbdApplicationException(
+                    SbdInnerErrIF.SBD_ERR_039_ADLINENGNID_ISNULL);
+
+            // 付加サービスメニューの必須チェック
+            } else if (StringUtils.isEmpty(pramSbdCor
+                    .getNgnOrderInf().getAdServiceMenu())) {
+                // NULLまたは空文字の場合は異常終了
+                throw new SbdApplicationException(
+                    SbdInnerErrIF.SBD_ERR_039_ADSERVICEMENU_ISNULL);
+
+            // 付加サービス種別の必須チェック
+            } else if (StringUtils.isEmpty(pramSbdCor
+                    .getNgnOrderInf().getAdServiceClass())) {
+                // NULLまたは空文字の場合は異常終了
+                throw new SbdApplicationException(
+                    SbdInnerErrIF.SBD_ERR_039_ADSERVICECLASS_ISNULL);
+
+            // 料金識別IDの必須チェック
+            } else if (StringUtils.isEmpty(pramSbdCor
+                    .getNgnOrderInf().getAdBillPrimary())) {
+                // NULLまたは空文字の場合は異常終了
+                throw new SbdApplicationException(
+                    SbdInnerErrIF.SBD_ERR_039_ADBILLPRIMARY_ISNULL);
+
+            // 注文種別の必須チェック
+            } else if (StringUtils.isEmpty(pramSbdCor
+                    .getNgnOrderInf().getAdOrderClass())) {
+                // NULLまたは空文字の場合は異常終了
+                throw new SbdApplicationException(
+                    SbdInnerErrIF.SBD_ERR_039_ADORDERCLASS_ISNULL);
+
+            // 付加サービスステータスの必須チェック
+            } else if (StringUtils.isEmpty(pramSbdCor
+                    .getNgnOrderInf().getAdOrderS())) {
+                // NULLまたは空文字の場合は異常終了
+                throw new SbdApplicationException(
+                    SbdInnerErrIF.SBD_ERR_039_ADORDERS_ISNULL);
+
+            // 料金請求方法の必須チェック
+            } else if (StringUtils.isEmpty(pramSbdCor
+                    .getNgnOrderInf().getAdBilling())) {
+                // NULLまたは空文字の場合は異常終了
+                throw new SbdApplicationException(
+                    SbdInnerErrIF.SBD_ERR_039_ADBILLING_ISNULL);
+            }
+
+            // 注文種別が
+            // 「廃止：A0020」または
+            // 「移転廃止（回線ID変更あり）：A0038」または
+            // 「移転廃止（回線ID変更なし）：A003A」または
+            // 「修正（廃止）：A0620」または
+            // 「修正移転廃止（回線ID変更あり）：A0338」または
+            // 「修正（移転廃止（回線ID変更なし）：A033A」の場合
+            if (SbdConst.ORDERCLASSA0020.equals(
+                    pramSbdCor.getNgnOrderInf().getAdOrderClass())
+                    || SbdConst.ORDERCLASSA0038.equals(
+                    pramSbdCor.getNgnOrderInf().getAdOrderClass())
+                    || SbdConst.ORDERCLASSA003A.equals(
+                    pramSbdCor.getNgnOrderInf().getAdOrderClass())
+                    || SbdConst.ORDERCLASSA0620.equals(
+                    pramSbdCor.getNgnOrderInf().getAdOrderClass())
+                    || SbdConst.ORDERCLASSA0338.equals(
+                    pramSbdCor.getNgnOrderInf().getAdOrderClass())
+                    || SbdConst.ORDERCLASSA033A.equals(
+                    pramSbdCor.getNgnOrderInf().getAdOrderClass())) {
+
+                // 課金停止日の必須チェック
+                if (pramSbdCor.getNgnOrderInf()
+                        .getAdServiceEDate() == null) {
+                    // NULLの場合は異常終了
+                    throw new SbdApplicationException(
+                        SbdInnerErrIF.SBD_ERR_039_ADSERVICEEDATE_ISNULL);
+                }
+            }
+
+            if (SbdUtil.LOG.isDebugLoggable()) {
+                // メソッド終了ログ出力
+                SbdUtil.putEndLog(LoggerIf.DEBUG,
+                    new String[]{LOG_HEADER, method});
+            }
+        } catch (SbdApplicationException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new SbdSystemException(SbdMsgIF.SBD_ERR_SYSTEM_MSG_039, e);
+        }
+    }
+}
