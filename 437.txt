@@ -1,0 +1,182 @@
+/*
+ * Copyright (c) 2014 NTT DATA CORPORATION. All rights reserved.
+ */
+package telecom.cms.sbd.logic.check;
+
+import java.util.Calendar;
+import java.util.Date;
+import java.util.List;
+
+import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.time.DateUtils;
+
+import telecom.cms.sbd.SbdConst;
+import telecom.cms.sbd.SbdInnerErrIF;
+import telecom.cms.sbd.SbdMsgIF;
+import telecom.cms.sbd.controller.SbdCordinator;
+import telecom.cms.sbd.entity.CtrKeiyaku;
+import telecom.cms.sbd.entity.NgnOrderInf;
+import telecom.cms.sbd.exception.SbdApplicationException;
+import telecom.cms.sbd.exception.SbdSystemException;
+import telecom.cms.sbd.util.SbdUtil;
+import telecom.cms.sbd.util.db.CtrKeiyakuDBAccesser;
+import telecom.cms.sbd.value.NgnAddInf;
+import telecom.common.logging.LoggerIf;
+
+/**
+ * 上位チェック（転用年月日）
+ * ALの転用年月日≦付加の転用年月日であることをチェックする。
+ * @author $Author: yamanouetsg $
+ * @version $Revision: 1.2 $
+ */
+public class MstrReceptValidatePatturn037 implements SbdCheckIF {
+
+    /**
+     * デバッグログに使用するクラス名
+     */
+    private static final String LOG_HEADER =
+        SbdUtil.getLoHeader(new Throwable());
+
+    /**
+     * 上位チェック（転用年月日）メソッド
+     * @param sbdCordinator 料金割引アダプタ連携オブジェクト
+     * @exception SbdApplicationException 料金・割引アダプタ内部アプリケーション例外
+     * @exception SbdSystemException 料金・割引アダプタ内部システム例外
+     */
+    public void check(SbdCordinator sbdCordinator)
+        throws SbdApplicationException, SbdSystemException {
+        // メソッド名取得
+        final String method = SbdUtil.getMethodName(new Throwable());
+
+        try {
+            if (SbdUtil.LOG.isDebugLoggable()) {
+                // メソッド開始ログ出力
+                SbdUtil.putStartLog(LoggerIf.DEBUG,
+                    new String[]{LOG_HEADER, method});
+            }
+
+            // ラベル30を取得する
+            String label30 = sbdCordinator.getNgnAddInf().getLabel30Add();
+            // 契約TBLIDを取得する
+            Long keiyakuTblId = sbdCordinator.getServiceTblInf()
+                                .getKeiyakuTblid();
+            // 転用年月日を取得する
+            Date adDivertDate = sbdCordinator.getNgnOrderInf()
+                                .getAdDivertDate();
+            // 注文種別を取得する
+            String adOrderClass = sbdCordinator.getNgnOrderInf()
+                                  .getAdOrderClass();
+
+            // ラベル30がNULLor空文字列、
+            // かつ「注文種別がA0070（転用）、A0670（修正（転用））以外」の場合はチェック処理を終了する
+            if (StringUtils.isEmpty(label30)
+                && !(SbdConst.ORDERCLASS_DIVERT.equals(adOrderClass)
+                || SbdConst.ORDERCLASS_CORRECT_DIVERT.equals(adOrderClass))) {
+
+                if (SbdUtil.LOG.isDebugLoggable()) {
+                    SbdUtil.putLog(LoggerIf.DEBUG,
+                        new String[]{LOG_HEADER, method,
+                            SbdMsgIF.SBD_NML_LOG_PARAMS},
+                        new Object[][]{{NgnAddInf.LABEL30ADD, label30},
+                            {NgnOrderInf.ADORDERCLASS, adOrderClass}});
+                }
+                return;
+            }
+
+            if (SbdUtil.LOG.isDebugLoggable()) {
+                SbdUtil.putLog(LoggerIf.DEBUG,
+                    new Object[]{LOG_HEADER, method,
+                        SbdMsgIF.SBD_NML_LOG_PARAMS},
+                    new Object[][]{{NgnAddInf.LABEL30ADD, label30},
+                                   {CtrKeiyaku.KEIYAKU_TBLID, keiyakuTblId},
+                                   {NgnOrderInf.ADDIVERTDATE, adDivertDate}});
+            }
+
+            // キー情報Nullチェック
+            // 契約TBLID
+            if (keiyakuTblId == null) {
+                throw new SbdApplicationException(
+                        SbdInnerErrIF.SBD_ERR_037_KEIYAKUTBLID_ISNULL);
+            }
+            // 転用年月日
+            if (adDivertDate == null) {
+                throw new SbdApplicationException(
+                        SbdInnerErrIF.SBD_ERR_037_ADDIVERTDATE_ISNULL);
+            }
+
+            // 契約情報を取得する
+            List ctrKeiyakuList = CtrKeiyakuDBAccesser.get(keiyakuTblId);
+
+            // 取得した契約情報の件数をチェックする
+            int ctrKeiyakuListCount = ctrKeiyakuList.size();
+
+            if (SbdUtil.LOG.isDebugLoggable()) {
+                SbdUtil.putLog(LoggerIf.DEBUG, new String[] {LOG_HEADER,
+                    method, SbdMsgIF.SBD_NML_RESULT_CNT,
+                    String.valueOf(ctrKeiyakuListCount) });
+            }
+
+            // 取得件数が1件以外の場合
+            if (ctrKeiyakuListCount != SbdConst.SBD_DB_UNIQUE) {
+                // 取得件数が0件の場合
+                if (ctrKeiyakuListCount == SbdConst.SBD_DB_NOTFOUND) {
+                    throw new SbdApplicationException(
+                         SbdInnerErrIF.SBD_ERR_037_CTR_KEIYAKU_NOTFOUND);
+                // 上記以外（取得件数が2件以上の場合）
+                } else {
+                    throw new SbdApplicationException(
+                         SbdInnerErrIF.SBD_ERR_037_CTR_KEIYAKU_DUPLICATE);
+                }
+            }
+
+            // 契約情報から転用年月日を取得する
+            Date tenyoYmd = ((CtrKeiyaku) ctrKeiyakuList.get(0)).getTenyoYmd();
+
+            if (SbdUtil.LOG.isDebugLoggable()) {
+                SbdUtil.putLog(LoggerIf.DEBUG,
+                new Object[]{LOG_HEADER, method, SbdMsgIF.SBD_NML_LOG_PARAMS},
+                new Object[][]{{CtrKeiyaku.TENYO_YMD, tenyoYmd}});
+            }
+
+            // 契約情報の転用年月日がNULLの場合はエラー
+            if (tenyoYmd == null) {
+                throw new SbdApplicationException(
+                    SbdInnerErrIF.SBD_ERR_037_TENYO_YMD_NULL);
+            }
+
+            // 比較する日付の時分秒を切り捨てる
+            // 契約情報の転用年月日（ALの転用年月日）
+            Date alDivertDate =
+                DateUtils.truncate(tenyoYmd, Calendar.DAY_OF_MONTH);
+            // 料金割引適用情報の転用年月日（付加の転用年月日）
+            Date addDivertDate =
+                DateUtils.truncate(adDivertDate, Calendar.DAY_OF_MONTH);
+
+            if (SbdUtil.LOG.isDebugLoggable()) {
+                SbdUtil.putLog(LoggerIf.DEBUG,
+                    new Object[]{LOG_HEADER, method,
+                        SbdMsgIF.SBD_NML_LOG_PARAMS},
+                    new Object[][]{{CtrKeiyaku.TENYO_YMD, alDivertDate},
+                                   {NgnOrderInf.ADDIVERTDATE, addDivertDate}});
+            }
+
+            // ALの転用年月日＞付加の転用年月日の場合はエラー
+            if (alDivertDate.compareTo(addDivertDate) > 0) {
+                 throw new SbdApplicationException(
+                     SbdInnerErrIF.SBD_ERR_037_INVALID_TENYO_YMD);
+            }
+
+            if (SbdUtil.LOG.isDebugLoggable()) {
+                // メソッド終了ログ出力
+                SbdUtil.putEndLog(LoggerIf.DEBUG,
+                    new String[]{LOG_HEADER, method});
+            }
+        } catch (SbdApplicationException e) {
+            throw e;
+        } catch (SbdSystemException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new SbdSystemException(SbdMsgIF.SBD_ERR_SYSTEM_MSG_037, e);
+        }
+    }
+}
